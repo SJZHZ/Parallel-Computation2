@@ -104,40 +104,50 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
     dist[0] = 0;
     //a flag to record if there is any distance change in this iteration
     bool has_change;
+    int NN = 12, local_u, local_has_change;
     //bellman-ford edge relaxation
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
         has_change = false;
+#pragma omp parallel for num_threads(NN) shared(has_change) private(local_u, local_has_change)
         for (int u = 0; u < n; u++)
         {
+            local_u = dist[u];
+            local_has_change = false;
             for (int v = 0; v < n; v++)
-                {
+            {
                 int weight = utils::mat[u][v];
                 if (weight < INF) { //test if u--v has an edge
-                    if (dist[u] + weight < dist[v])
+                    if (local_u + weight < dist[v])
                     {
-                        has_change = true;
-                        dist[v] = dist[u] + weight;
+                        // has_change = true;
+                        local_has_change = true;
+                        dist[v] = local_u + weight;
                     }
                 }
             }
+            if (local_has_change)
+                has_change = true;
         }
         //if there is no change in this iteration, then we have finished
         if(!has_change)
             return;
     }
     //do one more iteration to check negative cycles
+
+#pragma omp parallel for num_threads(NN)
     for (int u = 0; u < n; u++)
     {
+        if (*has_negative_cycle)
+            continue;
         for (int v = 0; v < n; v++)
         {
             int weight = utils::mat[u][v];
             if (weight < INF)
                 if (dist[u] + weight < dist[v])     // if we can relax one more step, then we find a negative cycle
-                  
                 {   
                     *has_negative_cycle = true;
-                    return;
+                    break;
                 }
         }
     }

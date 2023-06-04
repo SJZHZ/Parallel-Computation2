@@ -92,9 +92,9 @@ namespace utils
         终止条件：在某次迭代后没有发生更新，或迭代了n-1轮（此时需要多迭代一轮，判定负权）。
 */
 
-/**
+/*
  * Bellman-Ford algorithm. `has_shortest_path` will be set to false if negative cycle found
- */
+*/
 void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative_cycle) {
     //initialize results
     *has_negative_cycle = false;
@@ -104,14 +104,16 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
     dist[0] = 0;
     //a flag to record if there is any distance change in this iteration
     bool has_change;
+    int NN = 12;
     //bellman-ford edge relaxation
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
         has_change = false;
+#pragma omp parallel for num_threads(NN)
         for (int u = 0; u < n; u++)
         {
             for (int v = 0; v < n; v++)
-                {
+            {
                 int weight = utils::mat[u][v];
                 if (weight < INF) { //test if u--v has an edge
                     if (dist[u] + weight < dist[v])
@@ -127,17 +129,20 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
             return;
     }
     //do one more iteration to check negative cycles
+
+#pragma omp parallel for num_threads(NN)
     for (int u = 0; u < n; u++)
     {
+        if (*has_negative_cycle)
+            continue;
         for (int v = 0; v < n; v++)
         {
             int weight = utils::mat[u][v];
             if (weight < INF)
                 if (dist[u] + weight < dist[v])     // if we can relax one more step, then we find a negative cycle
-                  
                 {   
                     *has_negative_cycle = true;
-                    return;
+                    break;
                 }
         }
     }

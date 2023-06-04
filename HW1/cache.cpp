@@ -10,6 +10,7 @@
 #include <fstream>
 #include <algorithm>
 #include <sys/time.h>
+#include <omp.h>
 
 using std::string;
 using std::cout;
@@ -88,7 +89,8 @@ namespace utils
     
     算法：
         初始化：d[0]=0
-        状态转移：d_x=min{d_x,d_y+w(y,x)}
+        状态转移：d[x]=min(d[x],d[y]+w[y][x])
+            迭代可以是同步的或异步的，但差距不可以超过一步。这给了我们并行的空间
         终止条件：在某次迭代后没有发生更新，或迭代了n-1轮（此时需要多迭代一轮，判定负权）。
 */
 
@@ -103,44 +105,60 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
     //root vertex always has distance 0
     dist[0] = 0;
     //a flag to record if there is any distance change in this iteration
-    bool has_change;
+    bool has_change, local_has_change;
+    int local_v, tid, nt, NN = 12;
+
     //bellman-ford edge relaxation
+
+    // nt = omp_get_num_threads();
+    // tid = omp_get_thread_num();
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
         has_change = false;
-        for (int u = 0; u < n; u++)
+#pragma omp parallel for num_threads(NN) private(local_v, local_has_change) shared(has_change)
+        for (int v = 0; v < n; v++)
         {
-            for (int v = 0; v < n; v++)
-                {
+            local_v = dist[v];
+            local_has_change = false;
+            for (int u = 0; u < n; u++)
+            {
                 int weight = utils::mat[u][v];
-                if (weight < INF) { //test if u--v has an edge
-                    if (dist[u] + weight < dist[v])
+                if (weight < INF)       //test if u--v has an edge
+                {
+                    if (dist[u] + weight < local_v)
                     {
-                        has_change = true;
-                        dist[v] = dist[u] + weight;
+                        // has_change = true;
+                        local_has_change = true;
+                        local_v = dist[u] + weight;
                     }
                 }
             }
+            if (local_has_change)
+                has_change = true;
+            dist[v] = local_v;
         }
         //if there is no change in this iteration, then we have finished
         if(!has_change)
             return;
     }
-    //do one more iteration to check negative cycles
-    for (int u = 0; u < n; u++)
+//do one more iteration to check negative cycles
+#pragma omp parallel for num_threads(NN)
+    for (int v = 0; v < n; v++)
     {
-        for (int v = 0; v < n; v++)
+        if (*has_negative_cycle)
+            continue;
+        for (int u = 0; u < n; u++)
         {
             int weight = utils::mat[u][v];
             if (weight < INF)
                 if (dist[u] + weight < dist[v])     // if we can relax one more step, then we find a negative cycle
-                  
                 {   
                     *has_negative_cycle = true;
-                    return;
+                    break;
                 }
         }
     }
+
 }
 
 int main(int argc, char **argv) {
