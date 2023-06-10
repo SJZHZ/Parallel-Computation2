@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <sys/time.h>
 #include <omp.h>
+#include <string.h>
 
 using std::string;
 using std::cout;
@@ -105,51 +106,61 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
     //root vertex always has distance 0
     dist[0] = 0;
     //a flag to record if there is any distance change in this iteration
-    bool has_change, local_has_change;
-    int local_v, tid, nt, NN = 12;
+    bool has_change = 1, local_has_change;
+    int tid, nt, local_u;
+    
 
     //bellman-ford edge relaxation
-
-#pragma omp parallel num_threads(8) private(local_v, local_has_change) shared(has_change)
+#pragma omp parallel shared(has_change) private(tid, local_u, local_has_change)
 {
     nt = omp_get_num_threads();
     tid = omp_get_thread_num();
-    // int chunksize = (n + nt - 1) / nt, begin = chunksize * tid, end = begin + chunksize;
+    int chunksize = (n + nt - 1) / nt, begin = tid * chunksize, end = begin + chunksize;
+    if (n < end)
+    {
+        end = n;
+        chunksize = end - begin;
+    }
+    int* temp_matu = (int*)malloc(sizeof(int) * n);
+
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
-        // std::cout << endl << tid << ' ' << has_change << endl;
-#pragma omp single
-{
+// #pragma omp single
         has_change = false;
-}
-        for (int v = tid; v < n; v += nt)
+        local_has_change = false;
+        for (int u = tid; u < n; u += nt)
         {
-            for (int u = 0; u < n; u++)
+            local_u = dist[u];
+            memcpy(temp_matu, &(utils::mat[u][0]), sizeof(int) * n);
+            for (int v = 0; v < n; v ++)
             {
-                int weight = utils::mat[u][v];
-                if (weight < INF)       //test if u--v has an edge
+                // int weight = utils::mat[u][v];
+                if (temp_matu[v] < INF)       //test if u--v has an edge
                 {
-                    if (dist[u] + weight < dist[v])
+                    if (local_u + temp_matu[v] < dist[v])
                     {
-                        has_change = true;
-                        dist[v] = dist[u] + weight;
+                        // has_change = true;
+                        local_has_change = true;
+                        dist[v] = local_u + temp_matu[v];
                     }
                 }
             }
         }
+        if (local_has_change)
+            has_change = true;
         //if there is no change in this iteration, then we have finished
 #pragma omp barrier
-        if(!has_change)
-        {
+        if (!has_change)
             break;
-        }
+#pragma omp barrier
     }
+    free(temp_matu);
 }
 
     if (!has_change)
         return;
 //do one more iteration to check negative cycles
-#pragma omp parallel for num_threads(NN)
+#pragma omp parallel for
     for (int u = 0; u < n; u++)
     {
         if (*has_negative_cycle)
@@ -182,14 +193,14 @@ int main(int argc, char **argv) {
     timeval start_wall_time_t, end_wall_time_t;
     float ms_wall;
     gettimeofday(&start_wall_time_t, nullptr);      //start timer
-    bellman_ford(utils::N, utils::mat, dist, &has_negative_cycle);      //bellman ford algorithm
-    gettimeofday(&end_wall_time_t, nullptr);        //end timer
 
+    bellman_ford(utils::N, utils::mat, dist, &has_negative_cycle);      //bellman ford algorithm
+
+    gettimeofday(&end_wall_time_t, nullptr);        //end timer
     ms_wall = ((end_wall_time_t.tv_sec - start_wall_time_t.tv_sec) * 1000 * 1000
                + end_wall_time_t.tv_usec - start_wall_time_t.tv_usec) / 1000.0;
 
     std::cerr << "Time(s): " << ms_wall/1000.0 << endl;
-
     utils::print_result(has_negative_cycle, dist);
 
     free(dist);

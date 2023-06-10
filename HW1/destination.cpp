@@ -105,17 +105,13 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
     //root vertex always has distance 0
     dist[0] = 0;
     //a flag to record if there is any distance change in this iteration
-    bool has_change, local_has_change;
-    int local_v, tid, nt, NN = 12;
+    bool has_change;
 
     //bellman-ford edge relaxation
-
-    // nt = omp_get_num_threads();
-    // tid = omp_get_thread_num();
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
         has_change = false;
-#pragma omp parallel for shared(has_change) num_threads(NN)
+#pragma omp parallel for shared(has_change)
         for (int v = 0; v < n; v++)
         {
             for (int u = 0; u < n; u++)
@@ -137,7 +133,7 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
     }
 
 //do one more iteration to check negative cycles
-#pragma omp parallel for num_threads(NN)
+#pragma omp parallel for
     for (int v = 0; v < n; v++)
     {
         if (*has_negative_cycle)
