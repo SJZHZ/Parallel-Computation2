@@ -7,13 +7,13 @@ all:${EXE}
 serial: serial.cpp
 	$(CC) -o $@ $^ $(FLAGS)
 destination: destination.cpp
-	$(CC) -o $@ $^ $(FLAGS) -Ofast -fopenmp
+	$(CC) -o $@ $^ $(FLAGS)  -fopenmp
 pathway: pathway.cpp
-	$(CC) -o $@ $^ $(FLAGS) -Ofast -fopenmp
+	$(CC) -o $@ $^ $(FLAGS)  -fopenmp
 collapse: collapse.cpp
-	$(CC) -o $@ $^ $(FLAGS) -Ofast -fopenmp
+	$(CC) -o $@ $^ $(FLAGS)  -fopenmp
 pathway_cache: pathway_cache.cpp
-	$(CC) -o $@ $^ $(FLAGS) -Ofast -fopenmp
+	$(CC) -o $@ $^ $(FLAGS)  -fopenmp
 persistent: persistent.cpp
 	$(CC) -o $@ $^ $(FLAGS) -fopenmp
 persistent_T: persistent_T.cpp

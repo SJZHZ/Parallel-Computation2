@@ -1,0 +1,24 @@
+serial
+Time(s): 0.242699
+PASSED
+destination
+Time(s): 0.051606
+PASSED
+pathway
+Time(s): 0.041085
+PASSED
+collapse
+Time(s): 0.040408
+PASSED
+pathway_cache
+Time(s): 0.037081
+PASSED
+persistent without Optimization
+Time(s): 0.018184
+PASSED
+persistent_T
+Time(s): 0.009544
+PASSED
+persistent-final
+Time(s): 0.008936
+PASSED

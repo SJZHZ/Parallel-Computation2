@@ -107,21 +107,22 @@ namespace utils
 void bellman_ford(int n, vector<vector<int> >&mat, vector<vector<int> > &matT, int *dist, bool *has_negative_cycle)
 {
     //a flag to record if there is any distance change in this iteration
-    bool has_change = 1, local_has_change;
-    int tid, nt, local_v;
+    bool has_change = 1;
+    // int tid, nt, local_v;
     
 
     //bellman-ford edge relaxation
-#pragma omp parallel shared(has_change) private(tid, local_v, local_has_change)
+#pragma omp parallel shared(has_change)
 {
-    nt = omp_get_num_threads();
-    tid = omp_get_thread_num();
+    int nt = omp_get_num_threads();
+    int tid = omp_get_thread_num();
     int chunksize = (n + nt - 1) / nt, begin = tid * chunksize, end = begin + chunksize;
     if (n < end)
     {
         end = n;
         chunksize = end - begin;
     }
+
     int* temp_matTv = (int*)malloc(sizeof(int) * n);
     int* temp_dist = (int*) malloc(sizeof(int) * n);
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
@@ -129,11 +130,11 @@ void bellman_ford(int n, vector<vector<int> >&mat, vector<vector<int> > &matT, i
 #pragma omp single
         has_change = false;
 
+        bool local_has_change = false;
         memcpy(temp_dist, dist, sizeof(int) * n);
-        local_has_change = false;
-        for (int v = tid; v < n; v += nt)
+        for (int v = begin; v < end; v ++)
         {
-            local_v = temp_dist[v];
+            int local_v = temp_dist[v];
             memcpy(temp_matTv, &(matT[v][0]), sizeof(int) * n);
             for (int u = 0; u < n; u ++)
             {
@@ -161,6 +162,7 @@ void bellman_ford(int n, vector<vector<int> >&mat, vector<vector<int> > &matT, i
 #pragma omp barrier
     }
     free(temp_matTv);
+    free(temp_dist);
 }
 
     if (!has_change)

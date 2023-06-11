@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=12
 #SBATCH -t 1:00
-#SBATCH -w cu08
+#SBATCH -w cu06
 export OMP_NUM_THREADS=12
 
 echo serial
@@ -21,15 +21,15 @@ echo pathway
 ./pathway "input2.txt"
 ./check
 
-echo pathway_cache
-./pathway_cache "input2.txt"
-./check
-
 echo collapse
 ./collapse "input2.txt"
 ./check
 
-echo persistent without-O3
+echo pathway_cache
+./pathway_cache "input2.txt"
+./check
+
+echo persistent without Optimization
 ./persistent "input2.txt"
 ./check
 
@@ -37,6 +37,6 @@ echo persistent_T
 ./persistent_T "input2.txt"
 ./check
 
-echo final:persistent
+echo persistent-final
 ./final "input2.txt"
 ./check

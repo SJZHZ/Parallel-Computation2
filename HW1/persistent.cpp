@@ -99,35 +99,36 @@ namespace utils
  * Bellman-Ford algorithm. `has_shortest_path` will be set to false if negative cycle found
  */
 void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative_cycle) {
-    //initialize results
-    *has_negative_cycle = false;
-    for (int i = 0; i < n; i++)
-        dist[i] = INF;
-    //root vertex always has distance 0
-    dist[0] = 0;
     //a flag to record if there is any distance change in this iteration
-    bool has_change = 1, local_has_change;
-    int tid, nt, local_u;
+    bool has_change = 1;
     
+    int local_u, nt;
 
     //bellman-ford edge relaxation
-#pragma omp parallel shared(has_change) private(tid, local_u, local_has_change)
+#pragma omp parallel shared(has_change, nt) private(local_u)
 {
     nt = omp_get_num_threads();
-    tid = omp_get_thread_num();
+    int tid = omp_get_thread_num();
     int chunksize = (n + nt - 1) / nt, begin = tid * chunksize, end = begin + chunksize;
     if (n < end)
     {
         end = n;
         chunksize = end - begin;
     }
+
+    // first touch
+    for (int i = begin; i < end; i++)
+        dist[i] = INF;
+    //root vertex always has distance 0
+    dist[0] = 0;
+
     int* temp_matu = (int*)malloc(sizeof(int) * n);
 
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
 // #pragma omp single
         has_change = false;
-        local_has_change = false;
+        bool local_has_change = false;
         for (int u = tid; u < n; u += nt)
         {
             local_u = dist[u];
@@ -185,9 +186,10 @@ int main(int argc, char **argv) {
     string filename = argv[1];
     assert(utils::read_file(filename) == 0);
 
+    //initialize results
     int *dist;
     dist = (int *) malloc(sizeof(int) * utils::N);
-    bool has_negative_cycle;
+    bool has_negative_cycle = false;
 
     //time counter
     timeval start_wall_time_t, end_wall_time_t;
