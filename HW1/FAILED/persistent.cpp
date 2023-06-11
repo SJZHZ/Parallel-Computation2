@@ -99,16 +99,16 @@ namespace utils
  * Bellman-Ford algorithm. `has_shortest_path` will be set to false if negative cycle found
  */
 void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative_cycle) {
-    //a flag to record if there is any distance change in this iteration
-    bool has_change = 1;
-    
-    int local_u, nt;
 
-    //bellman-ford edge relaxation
-#pragma omp parallel shared(has_change, nt) private(local_u)
+    bool has_change = 1;
+    int nt;
+
+#pragma omp parallel shared(has_change, nt)
 {
     nt = omp_get_num_threads();
     int tid = omp_get_thread_num();
+    
+    // setting begin, end, chunksize
     int chunksize = (n + nt - 1) / nt, begin = tid * chunksize, end = begin + chunksize;
     if (n < end)
     {
@@ -116,50 +116,51 @@ void bellman_ford(int n, vector<vector<int> >&mat, int *dist, bool *has_negative
         chunksize = end - begin;
     }
 
-    // first touch
+    // first touch cache
     for (int i = begin; i < end; i++)
         dist[i] = INF;
-    //root vertex always has distance 0
     dist[0] = 0;
-
     int* temp_matu = (int*)malloc(sizeof(int) * n);
 
+    //bellman-ford edge relaxation
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
 // #pragma omp single
         has_change = false;
-        bool local_has_change = false;
+        register bool local_has_change = false;                             // try cache has_change
         for (int u = tid; u < n; u += nt)
         {
-            local_u = dist[u];
-            memcpy(temp_matu, &(utils::mat[u][0]), sizeof(int) * n);
+            register int local_u = dist[u];                                 // try cache dist[u]
+            memcpy(temp_matu, &(utils::mat[u][0]), sizeof(int) * n);        // try cache utils::mat[u]
             for (int v = 0; v < n; v ++)
             {
-                // int weight = utils::mat[u][v];
-                if (temp_matu[v] < INF)       //test if u--v has an edge
+                register int weight = temp_matu[v];                     // try cache utils::mat[u][v]
+                if (weight < INF)                                     // test if u--v has an edge
                 {
-                    if (local_u + temp_matu[v] < dist[v])
+                    if (local_u + weight < dist[v])
                     {
                         // has_change = true;
                         local_has_change = true;
-                        dist[v] = local_u + temp_matu[v];
+                        dist[v] = local_u + weight;
                     }
                 }
             }
         }
-        if (local_has_change)
+        if (local_has_change)                                               // cache write back
             has_change = true;
-        //if there is no change in this iteration, then we have finished
+
 #pragma omp barrier
-        if (!has_change)
+        if (!has_change)                                                    // Must be strictly synchronized
             break;
 #pragma omp barrier
+
     }
     free(temp_matu);
 }
 
     if (!has_change)
         return;
+
 //do one more iteration to check negative cycles
 #pragma omp parallel for
     for (int u = 0; u < n; u++)

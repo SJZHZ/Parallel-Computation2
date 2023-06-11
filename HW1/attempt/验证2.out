@@ -1,0 +1,16 @@
+serial
+Time(s): 0.242657
+collapse
+Time(s): 0.014609
+PASSED
+destination
+Time(s): 0.020154
+PASSED
+cache
+Time(s): 0.010197
+PASSED
+
+FINAL:
+persistent_T
+Time(s): 0.008847
+PASSED

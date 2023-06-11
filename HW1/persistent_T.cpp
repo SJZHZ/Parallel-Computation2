@@ -122,30 +122,35 @@ void bellman_ford(int n, vector<vector<int> >&mat, vector<vector<int> > &matT, i
         end = n;
         chunksize = end - begin;
     }
+    for (int i = begin; i < end; i++)
+        dist[i] = INF;
+    dist[0] = 0;
 
-    int* temp_matTv = (int*)malloc(sizeof(int) * n);
-    int* temp_dist = (int*) malloc(sizeof(int) * n);
+
+    // int* temp_matTv = (int*)malloc(sizeof(int) * n);
+    // int* temp_dist = (int*) malloc(sizeof(int) * n);
     for (int i = 0; i < n - 1; i++)     // n - 1 iteration
     {
 #pragma omp single
         has_change = false;
 
-        bool local_has_change = false;
-        memcpy(temp_dist, dist, sizeof(int) * n);
-        for (int v = begin; v < end; v ++)
+        // memcpy(temp_dist, dist, sizeof(int) * n);
+        register bool local_has_change = false;
+        for (int v = tid; v < n; v += nt)
         {
-            int local_v = temp_dist[v];
-            memcpy(temp_matTv, &(matT[v][0]), sizeof(int) * n);
+            // memcpy(temp_matTv, &(matT[v][0]), sizeof(int) * n);
+            register int local_v = dist[v];
             for (int u = 0; u < n; u ++)
             {
-                int local_u = dist[u];
-                if (temp_matTv[u] < INF)       //test if u--v has an edge
+                register int local_u = dist[u];
+                register int weight = matT[v][u];
+                if (weight < INF)       //test if u--v has an edge
                 {
-                    if (local_u + temp_matTv[u] < local_v)
+                    if (local_u + weight < local_v)
                     {
                         // has_change = true;
                         local_has_change = true;
-                        local_v = local_u + temp_matTv[u];
+                        local_v= local_u + weight;
                     }
                 }
             }
@@ -161,8 +166,8 @@ void bellman_ford(int n, vector<vector<int> >&mat, vector<vector<int> > &matT, i
             break;
 #pragma omp barrier
     }
-    free(temp_matTv);
-    free(temp_dist);
+    // free(temp_matTv);
+    // free(temp_dist);
 }
 
     if (!has_change)
@@ -196,9 +201,7 @@ int main(int argc, char **argv) {
     //initialize results
     int *dist;
     dist = (int *) malloc(sizeof(int) * utils::N);
-    for (int i = 0; i < utils::N; i++)
-        dist[i] = INF;
-    dist[0] = 0;
+
     bool has_negative_cycle = false;
 
 
