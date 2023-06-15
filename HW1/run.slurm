@@ -6,9 +6,9 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=12
 #SBATCH -t 1:00
-#SBATCH -w cu06
+#SBATCH -w cu08
 export OMP_NUM_THREADS=12
-target="input1.txt"
+target="input2.txt"
 
 echo serial
 ./serial $target
