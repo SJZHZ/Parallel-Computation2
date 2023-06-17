@@ -3,6 +3,7 @@
 #include <tuple>
 #include <cmath>
 #include <string>
+#include <string.h>
 
 /*
     You can modify the following namespace.
@@ -11,30 +12,38 @@ namespace attention {
     struct Matrix {
         int row, col;
         double **data;
+        double* array2d;
 
-        Matrix(int row, int col) : row(row), col(col) {
+        Matrix(int row, int col) : row(row), col(col)
+        {
             data = new double*[row];        //不是经典的二维数组
-            for (int i = 0; i < row; ++i) {
-                data[i] = new double[col];
+            array2d = new double[row * col];
+            for (int i = 0; i < row; ++i)
+            {
+                data[i] = array2d + col * i;
             }
         }
 
-        ~Matrix() {
-            for (int i = 0; i < row; ++i) {
-                delete[] data[i];
-            }
+        ~Matrix()
+        {
+            // for (int i = 0; i < row; ++i)
+            // {
+            //     delete[] data[i];
+            // }
+            delete[] array2d;
             delete[] data;
         }
     };
 
+    // 连续取n行
+    Matrix* getlines(Matrix* a, int n, int pos)
+    {
+        Matrix *c = new Matrix(n, a->col);
+        memcpy(c->array2d, &(a->data[pos][0]), n * a->col * sizeof(double));
+        return c;
+    }
 
-    /*
-        You can modify the following functions.
-        These functions are the basic operations of the matrix.
-    */
-    /*
-        矩阵转置
-    */
+    // 取转置
     Matrix* transpose(Matrix* a) {
         Matrix *c = new Matrix(a->col, a->row);
         for (int i = 0; i < a->row; ++i) {
@@ -45,9 +54,7 @@ namespace attention {
         return c;
     }
 
-    /*
-        矩阵乘
-    */
+    // 矩阵乘
     Matrix* matmul(Matrix *a, Matrix *b) {
         if (a->col != b->row) {
             return nullptr;
@@ -64,6 +71,7 @@ namespace attention {
         return c;
     }
 
+    // 尺度变换
     Matrix* scale(Matrix *a, double s) {
         Matrix *c = new Matrix(a->row, a->col);
         for (int i = 0; i < a->row; ++i) {
@@ -74,6 +82,7 @@ namespace attention {
         return c;
     }
 
+    // 按行
     Matrix* softmax(Matrix *a) {
         Matrix *c = new Matrix(a->row, a->col);
         for (int i = 0; i < a->row; ++i) {
@@ -88,28 +97,53 @@ namespace attention {
         return c;
     }
 
-    /*
-        You can modify the following function.
-        This function is the attention function.
-    */
-    Matrix* attention(Matrix *q, Matrix *k, Matrix *v) {
+    Matrix* attention(Matrix *q, Matrix *k, Matrix *v)
+    {
+        int size, rank, begin, chunk, n;
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        chunk = (q->row + size - 1) / size;
+        begin = chunk * rank;
+        n = chunk < (q->row - begin) ? chunk : (q->row - begin);
+        Matrix *qq = getlines(q, n, begin);
+        
         Matrix *kt = transpose(k);
-        Matrix *qk = matmul(q, kt);
+        Matrix *qk = matmul(qq, kt);
         Matrix *qk_s = scale(qk, 1.0 / sqrt(k->col));
         Matrix *qk_s_s = softmax(qk_s);
         Matrix *qkv = matmul(qk_s_s, v);
-        delete kt;
-        delete qk;
-        delete qk_s;
-        delete qk_s_s;
+
+        Matrix *ans = new Matrix(q->row, v->col);
+
+        // if (rank == 0)
+        // {
+        //     for (int j = 0; j < n; j++)
+        //     {
+        //         memcpy(ans->data[j], qkv->data[j], sizeof(double) * qkv->col);
+        //     }
+
+        //     for (int i = 1; i < size; i++)
+        //         for (int j = 0; j < n; j++)
+        //         {
+        //             MPI_Recv(ans->data[i * n + j], qkv->col, MPI_DOUBLE, i, j, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //         }
+            
+        //     for (int j = 0; j < qkv->row; j++)
+        //     {
+        //         // MPI_Bcast(ans->data[j], qkv->col, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        //     }
+        // }
+        // else
+        // {
+        //     for (int j = 0; j < n; j++)
+        //     {
+        //         MPI_Send(qkv->data[j], qkv->col, MPI_DOUBLE, 0, j, MPI_COMM_WORLD);
+        //     }
+        // }
         return qkv;
     }
 }
 
-/*
-    You can modify the following function.
-    This function reads the matrix from the file.
-*/
 attention::Matrix* read_matrix(FILE *f) {
     int row, col;
     fscanf(f, "%d %d", &row, &col);
@@ -122,10 +156,7 @@ attention::Matrix* read_matrix(FILE *f) {
     return m;
 }
 
-/*
-    You can modify the following function.
-    This function reads the input file and returns the matrices and the ans.
-*/
+
 std::tuple<attention::Matrix*, attention::Matrix*, attention::Matrix*, double> prepare(std::string filename) {
     auto f = fopen(filename.c_str(), "r");
     int row, col;
@@ -181,6 +212,7 @@ int main(int argc, char **argv) {
     // Start attention.
     auto start = MPI_Wtime();
     auto qkv = attention::attention(q, k, v);
+        MPI_Barrier(MPI_COMM_WORLD);
     auto end = MPI_Wtime();
 
     // Reduce the answer
