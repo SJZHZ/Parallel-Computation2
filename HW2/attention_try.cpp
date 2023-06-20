@@ -16,7 +16,7 @@ namespace attention {
 
         Matrix(int row, int col) : row(row), col(col)
         {
-            data = new double*[row];        //不是经典的二维数组
+            data = new double*[row];
             array2d = new double[row * col];
             for (int i = 0; i < row; ++i)
             {
@@ -39,9 +39,10 @@ namespace attention {
     Matrix* getlines(Matrix* a, int n, int pos)
     {
         Matrix *c = new Matrix(n, a->col);
-        memcpy(c->array2d, &(a->data[pos][0]), n * a->col * sizeof(double));
+        memcpy(c->array2d, &(a->array2d[pos * a->col]), n * a->col * sizeof(double));
         return c;
     }
+
 
     // 取转置
     Matrix* transpose(Matrix* a) {
@@ -54,26 +55,88 @@ namespace attention {
         return c;
     }
 
-    // 矩阵乘
-    Matrix* matmul(Matrix *a, Matrix *b) {
-        if (a->col != b->row) {
+    Matrix* matmul_T_cache(Matrix *a, Matrix *b)
+    {
+        if (a->col != b->col)
             return nullptr;
-        }
-        Matrix *c = new Matrix(a->row, b->col);
-        for (int i = 0; i < a->row; ++i) {
-            for (int j = 0; j < b->col; ++j) {
+        int nn = a->col;
+        int mm = b->row;
+        Matrix *c = new Matrix(a->row, b->row);
+        for (int j = 0; j < mm - 7; j += 8)
+        {
+            for (int i = 0; i < a->row; ++i)
+            {
                 c->data[i][j] = 0;
-                for (int k = 0; k < a->col; ++k) {
-                    c->data[i][j] += a->data[i][k] * b->data[k][j];
+                c->data[i][j + 1] = 0;
+                c->data[i][j + 2] = 0;
+                c->data[i][j + 3] = 0;
+                c->data[i][j + 4] = 0;
+                c->data[i][j + 5] = 0;
+                c->data[i][j + 6] = 0;
+                c->data[i][j + 7] = 0;
+                // int ci = i * mm + j, ai = i * nn, bi = j * nn;
+                // c->array2d[ci] = 0;
+                // c->array2d[ci + 1] = 0;
+                for (int k = 0; k < nn; ++k)
+                {
+                    double aik = a->data[i][k];
+                    c->data[i][j] += aik * b->data[j][k];
+                    c->data[i][j + 1] += aik * b->data[j + 1][k];
+                    c->data[i][j + 2] += aik * b->data[j + 2][k];
+                    c->data[i][j + 3] += aik * b->data[j + 3][k];
+                    c->data[i][j + 4] += aik * b->data[j + 4][k];
+                    c->data[i][j + 5] += aik * b->data[j + 5][k];
+                    c->data[i][j + 6] += aik * b->data[j + 6][k];
+                    c->data[i][j + 7] += aik * b->data[j + 7][k];
+                    // c->array2d[ci] += a->array2d[ai + k] * b->array2d[bi + k];
+                    // c->array2d[ci + 1] += a->array2d[ai + k] * b->array2d[bi + nn + k];
+                }
+            }
+        }
+        //TODO: not devided by 8
+        for (int j = std::max(mm - 8, 0); j < mm; ++j)
+        {
+            for (int i = 0; i < a->row; ++i)
+            {
+                c->data[i][j] = 0;
+                // c->array2d[i * mm + j] = 0;
+                for (int k = 0; k < a->col; ++k)
+                {
+                    c->data[i][j] += a->data[i][k] * b->data[j][k];
+                    // c->array2d[i * mm + j] += a->array2d[i * nn + k] * b->array2d[j * nn + k];
                 }
             }
         }
         return c;
     }
 
-    // 尺度变换
+    Matrix* matmul_T(Matrix *a, Matrix *b)
+    {
+        if (a->col != b->col)
+            return nullptr;
+        int nn = a->col;
+        int mm = b->row;
+        Matrix *c = new Matrix(a->row, b->row);
+#pragma omp parallel for
+        for (int j = 0; j < b->row; ++j)
+        {
+            for (int i = 0; i < a->row; ++i)
+            {
+                c->data[i][j] = 0;
+                // c->array2d[i * mm + j] = 0;
+                for (int k = 0; k < a->col; ++k)
+                {
+                    c->data[i][j] += a->data[i][k] * b->data[j][k];
+                    // c->array2d[i * mm + j] += a->array2d[i * nn + k] * b->array2d[j * nn + k];
+                }
+            }
+        }
+        return c;
+    }
+    
     Matrix* scale(Matrix *a, double s) {
         Matrix *c = new Matrix(a->row, a->col);
+#pragma omp parallel for
         for (int i = 0; i < a->row; ++i) {
             for (int j = 0; j < a->col; ++j) {
                 c->data[i][j] = a->data[i][j] * s;
@@ -81,8 +144,12 @@ namespace attention {
         }
         return c;
     }
-
-    // 按行
+    Matrix* scale_in_place(Matrix *a, double s) {
+#pragma omp parallel for
+        for (int i = 0; i < a->row * a->col; ++i)
+            a->array2d[i] = a->array2d[i] * s;
+        return a;
+    }
     Matrix* softmax(Matrix *a) {
         Matrix *c = new Matrix(a->row, a->col);
         for (int i = 0; i < a->row; ++i) {
@@ -96,50 +163,41 @@ namespace attention {
         }
         return c;
     }
+    Matrix* softmax_in_place(Matrix *a)
+    {
+#pragma omp parallel for
+        for (int i = 0; i < a->row; ++i)
+        {
+            double sum = 0;
+            for (int j = 0; j < a->col; ++j) {
+                sum += exp(a->data[i][j]);
+            }
+            for (int j = 0; j < a->col; ++j) {
+                a->data[i][j] = exp(a->data[i][j]) / sum;
+            }
+        }
+        return a;
+    }
 
-    Matrix* attention(Matrix *q, Matrix *k, Matrix *v)
+    Matrix* attention(Matrix *q, Matrix *k, Matrix *vt)
     {
         int size, rank, begin, chunk, n;
         MPI_Comm_size(MPI_COMM_WORLD, &size);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         chunk = (q->row + size - 1) / size;
         begin = chunk * rank;
-        n = chunk < (q->row - begin) ? chunk : (q->row - begin);
-        Matrix *qq = getlines(q, n, begin);
-        
-        Matrix *kt = transpose(k);
-        Matrix *qk = matmul(qq, kt);
+        n = std::min(chunk, q->row - begin);
+        if (n <= 0)
+        {
+            n = 0;
+        }
+        attention::Matrix *qq = getlines(q, n, begin);
+
+        // Matrix *qk_s = matmul_T_scale(q, k, 1.0 / sqrt(k->col));
+        Matrix *qk = matmul_T_cache(qq, k);
         Matrix *qk_s = scale(qk, 1.0 / sqrt(k->col));
         Matrix *qk_s_s = softmax(qk_s);
-        Matrix *qkv = matmul(qk_s_s, v);
-
-        Matrix *ans = new Matrix(q->row, v->col);
-
-        // if (rank == 0)
-        // {
-        //     for (int j = 0; j < n; j++)
-        //     {
-        //         memcpy(ans->data[j], qkv->data[j], sizeof(double) * qkv->col);
-        //     }
-
-        //     for (int i = 1; i < size; i++)
-        //         for (int j = 0; j < n; j++)
-        //         {
-        //             MPI_Recv(ans->data[i * n + j], qkv->col, MPI_DOUBLE, i, j, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        //         }
-            
-        //     for (int j = 0; j < qkv->row; j++)
-        //     {
-        //         // MPI_Bcast(ans->data[j], qkv->col, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        //     }
-        // }
-        // else
-        // {
-        //     for (int j = 0; j < n; j++)
-        //     {
-        //         MPI_Send(qkv->data[j], qkv->col, MPI_DOUBLE, 0, j, MPI_COMM_WORLD);
-        //     }
-        // }
+        Matrix *qkv = matmul_T_cache(qk_s_s, vt);
         return qkv;
     }
 }
@@ -209,9 +267,19 @@ int main(int argc, char **argv) {
         printf("Ans: %.10lf\n", ans);
     }
 
+
+    attention::Matrix *vt = transpose(v);
+    // int size, begin, chunk, n;
+    // MPI_Comm_size(MPI_COMM_WORLD, &size);
+    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // chunk = (q->row + size - 1) / size;
+    // begin = chunk * rank;
+    // n = chunk < (q->row - begin) ? chunk : (q->row - begin);
+    // attention::Matrix *qq = getlines(q, n, begin);
+    // attention::Matrix *vt = transpose(v);
     // Start attention.
     auto start = MPI_Wtime();
-    auto qkv = attention::attention(q, k, v);
+    auto qkv = attention::attention(q, k, vt);
         MPI_Barrier(MPI_COMM_WORLD);
     auto end = MPI_Wtime();
 

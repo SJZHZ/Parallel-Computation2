@@ -7,8 +7,27 @@
 #SBATCH --cpus-per-task=4
 #SBATCH -t 3:00
 #SBATCH --nodelist cu05,cu04,cu03,cu02
-echo "basic"
-mpirun -np 1 ./attention "input1.in"
 
-echo "final"
+# echo "basic"
+# mpirun -np 1 ./attention "input1.in"
+# echo "basic -Ofast"
+# mpirun -np 1 ./attention_Of "input2.in"
+
+export OMP_NUM_THREADS=1
+# echo "final without Opt"
+# mpirun -n 16 ./attention_try_no "input2.in"
+echo INPUT1
+mpirun -n 16 ./attention_try "input1.in"
+echo INPUT2
+mpirun -n 16 ./attention_try "input2.in"
+echo -e "\nTEST TIME * 5"
+echo 1
+mpirun -n 16 ./attention_try "input2.in"
+echo 2
+mpirun -n 16 ./attention_try "input2.in"
+echo 3
+mpirun -n 16 ./attention_try "input2.in"
+echo 4
+mpirun -n 16 ./attention_try "input2.in"
+echo 5
 mpirun -n 16 ./attention_try "input2.in"

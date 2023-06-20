@@ -1,0 +1,20 @@
+basic
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698808
+Correct! Time: 73.7376849651
+basic -Ofast
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698811
+Correct! Time: 21.7690162659
+final without Opt
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698837
+Correct! Time: 4.8341712952
+final
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698837
+Correct! Time: 0.7029755116
