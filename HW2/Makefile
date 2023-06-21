@@ -1,15 +1,13 @@
 CC = mpic++ -std=c++11
 OBJ = *.o
-EXE = attention attention_try attention_test
+EXE = attention attention_try
 
 all:${EXE}
 
 attention: attention.cpp
 	$(CC) -o $@ $^ $(FLAGS) 
 attention_try: attention_try.cpp
-	$(CC) -o $@ $^ $(FLAGS) -Ofast -fopenmp
-attention_test: attention_test.cpp
-	$(CC) -o $@ $^ $(FLAGS) -Ofast -fopenmp
+	$(CC) -o $@ $^ $(FLAGS) -fopenmp
 	
 # attention_Of: attention.cpp
 # 	$(CC) -o $@ $^ $(FLAGS) -Ofast 

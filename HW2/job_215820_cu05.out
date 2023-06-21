@@ -2,36 +2,36 @@ INPUT1
 Matrix size: 8 x 5
 Ans: 21.2349314776
 Your answer: 21.2349314775
-Correct! Time: 0.0231099129
+Correct! Time: 0.0000553131
 INPUT2
 Matrix size: 2048 x 1024
 Ans: 1048568.4615699096
 Your answer: 1048568.4615698837
-Correct! Time: 0.6340563297
+Correct! Time: 3.9461877346
 
 TEST TIME * 5
 1
 Matrix size: 2048 x 1024
 Ans: 1048568.4615699096
 Your answer: 1048568.4615698837
-Correct! Time: 0.4594938755
+Correct! Time: 3.9777159691
 2
 Matrix size: 2048 x 1024
 Ans: 1048568.4615699096
 Your answer: 1048568.4615698837
-Correct! Time: 0.4216618538
+Correct! Time: 3.9428811073
 3
 Matrix size: 2048 x 1024
 Ans: 1048568.4615699096
 Your answer: 1048568.4615698837
-Correct! Time: 0.4709599018
+Correct! Time: 4.0242295265
 4
 Matrix size: 2048 x 1024
 Ans: 1048568.4615699096
 Your answer: 1048568.4615698837
-Correct! Time: 0.5301103592
+Correct! Time: 3.9634904861
 5
 Matrix size: 2048 x 1024
 Ans: 1048568.4615699096
 Your answer: 1048568.4615698837
-Correct! Time: 0.4611830711
+Correct! Time: 3.9623336792

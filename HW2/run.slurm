@@ -6,16 +6,18 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH -t 3:00
-#SBATCH --nodelist cu05,cu04,cu03,cu02
+#SBATCH --nodelist cu05,cu06,cu07,cu08
+
 
 # echo "basic"
-# mpirun -np 1 ./attention "input1.in"
+# mpirun -np 2 ./attention "input2.in"
 # echo "basic -Ofast"
 # mpirun -np 1 ./attention_Of "input2.in"
 
 export OMP_NUM_THREADS=1
 # echo "final without Opt"
 # mpirun -n 16 ./attention_try_no "input2.in"
+
 echo INPUT1
 mpirun -n 16 ./attention_try "input1.in"
 echo INPUT2
