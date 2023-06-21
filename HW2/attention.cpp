@@ -92,8 +92,8 @@ namespace attention {
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
         // TEST CHEAT!!!
-        if (rank == 0)
-            return new Matrix(10,10);
+        // if (rank == 0)
+        //     return new Matrix(10,10);
 
         Matrix *kt = transpose(k);
         Matrix *qk = matmul(q, kt);

@@ -9,20 +9,17 @@
 #SBATCH --nodelist cu05,cu06,cu07,cu08
 
 
-# echo "basic"
-# mpirun -np 2 ./attention "input2.in"
-# echo "basic -Ofast"
-# mpirun -np 1 ./attention_Of "input2.in"
+echo -----STANDARD-----
+mpirun -np 1 ./attention "input2.in"
 
 export OMP_NUM_THREADS=1
-# echo "final without Opt"
-# mpirun -n 16 ./attention_try_no "input2.in"
-
+echo -----CHECK-----
 echo INPUT1
 mpirun -n 16 ./attention_try "input1.in"
 echo INPUT2
 mpirun -n 16 ./attention_try "input2.in"
-echo -e "\nTEST TIME * 5"
+
+echo -e "\n-----TEST TIME by input2 * 5-----"
 echo 1
 mpirun -n 16 ./attention_try "input2.in"
 echo 2

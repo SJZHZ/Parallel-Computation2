@@ -52,22 +52,6 @@ namespace attention {
         return c;
     }
 
-    Matrix* matmul_T(Matrix *a, Matrix *b) {
-        if (a->col != b->col) {
-            return nullptr;
-        }
-        Matrix *c = new Matrix(a->row, b->row);
-        for (int i = 0; i < a->row; ++i) {
-            for (int j = 0; j < b->row; ++j) {
-                c->data[i][j] = 0;
-                for (int k = 0; k < a->col; ++k) {
-                    c->data[i][j] += a->data[i][k] * b->data[j][k];
-                }
-            }
-        }
-        return c;
-    }
-
     Matrix* matmul_T_cache(Matrix *a, Matrix *b)
     {
         if (a->col != b->col)
@@ -75,19 +59,19 @@ namespace attention {
         int nn = a->col;
         int mm = b->row;
         Matrix *c = new Matrix(a->row, b->row);
-#pragma omp parallel for
+
         for (int j = 0; j < mm - 3; j += 4)
         {
             for (int i = 0; i < a->row; ++i)
             {
                 double cc[4] = {0};
-                // c->data[i][j] = 0;
                 for (int k = 0; k < nn; ++k)
                 {
-                    cc[0] += a->data[i][k] * b->data[j][k];
-                    cc[1] += a->data[i][k] * b->data[j + 1][k];
-                    cc[2] += a->data[i][k] * b->data[j + 2][k];
-                    cc[3] += a->data[i][k] * b->data[j + 3][k];
+                    double aik = a->data[i][k];
+                    cc[0] += aik * b->data[j][k];
+                    cc[1] += aik * b->data[j + 1][k];
+                    cc[2] += aik * b->data[j + 2][k];
+                    cc[3] += aik * b->data[j + 3][k];
                 }
                 memcpy(&(c->data[i][j]), cc, 4 * sizeof(double));
             }
@@ -132,6 +116,7 @@ namespace attention {
 
     Matrix* attention(Matrix *q, Matrix *k, Matrix *vt)
     {
+
         int size, rank, begin, chunk, n;
         MPI_Comm_size(MPI_COMM_WORLD, &size);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -143,10 +128,10 @@ namespace attention {
         attention::Matrix *qq = getlines(q, n, begin);
         // attention::Matrix *vt = transpose(v);
 
-        Matrix *qk = matmul_T(qq, k);
+        Matrix *qk = matmul_T_cache(qq, k);
         Matrix *qk_s = scale(qk, 1.0 / sqrt(k->col));
         Matrix *qk_s_s = softmax(qk_s);
-        Matrix *qkv = matmul_T(qk_s_s, vt);
+        Matrix *qkv = matmul_T_cache(qk_s_s, vt);
         return qkv;
     }
 }

@@ -7,7 +7,7 @@ all:${EXE}
 attention: attention.cpp
 	$(CC) -o $@ $^ $(FLAGS) 
 attention_try: attention_try.cpp
-	$(CC) -o $@ $^ $(FLAGS) -fopenmp
+	$(CC) -o $@ $^ $(FLAGS) -Ofast -fopenmp
 	
 # attention_Of: attention.cpp
 # 	$(CC) -o $@ $^ $(FLAGS) -Ofast 

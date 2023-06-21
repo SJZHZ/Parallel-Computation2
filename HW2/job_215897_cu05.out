@@ -1,0 +1,43 @@
+-----STANDARD-----
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698808
+Correct! Time: 76.9117183685
+-----CHECK-----
+INPUT1
+Matrix size: 8 x 5
+Ans: 21.2349314776
+Your answer: 21.2349314775
+Correct! Time: 0.0000495911
+INPUT2
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698839
+Correct! Time: 0.1758003235
+
+-----TEST TIME by input2 * 5-----
+1
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698839
+Correct! Time: 0.1770319939
+2
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698839
+Correct! Time: 0.1761698723
+3
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698839
+Correct! Time: 0.1758799553
+4
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698839
+Correct! Time: 0.1848554611
+5
+Matrix size: 2048 x 1024
+Ans: 1048568.4615699096
+Your answer: 1048568.4615698839
+Correct! Time: 0.1764211655
