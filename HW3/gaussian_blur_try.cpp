@@ -17,16 +17,15 @@ constexpr double KERNEL[KERNEL_SIZE][KERNEL_SIZE] = {
 void gaussianBlur(double** image, double** blurredImage, int height, int width) {
     // Apply the Gaussian blur
 #pragma omp parallel for
-    for (int j = 1; j < width - 1; ++j) {
-        for (int i = 1; i < height - 1; ++i) {
+    for (int i = 1; i < height - 1; ++i) {
+        for (int j = 1; j < width - 1; ++j) {
             // Apply the kernel to the neighborhood
-            double pixel = 0.0;
+            double pixel = 0.0, pixel2 = 0.0;
             for (int l = -1; l <= 1; ++l) {
                 for (int k = -1; k <= 1; ++k) {
                     pixel += image[i + k][j + l] * KERNEL[k + 1][l + 1];
                 }
             }
-
             // Update the blurred image
             blurredImage[i][j] = pixel / 16.0;
         }

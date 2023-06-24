@@ -4,7 +4,21 @@
 #SBATCH -J parco2023_hw3
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
-#SBATCH -t 5:00
+#SBATCH --cpus-per-task=12
+#SBATCH -t 3:00
+#SBATCH -w cu04
 
-./gaussian_blur
+export OMP_NUM_THREADS=1
+# ./gaussian_blur
+# ./gaussian_blur
+# ./gaussian_blur
+# ./gaussian_blur
+# ./gaussian_blur
+
+export OMP_NUM_THREADS=12
+echo "TEST TIME * 5"
+./gaussian_blur_try
+./gaussian_blur_try
+./gaussian_blur_try
+./gaussian_blur_try
+./gaussian_blur_try
