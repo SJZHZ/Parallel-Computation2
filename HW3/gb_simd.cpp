@@ -22,16 +22,16 @@ void gaussianBlur(double** image, double** blurredImage, int height, int width)
 {
     int tid = omp_get_thread_num();
     int nt = omp_get_num_threads();
-    int chunk = (height + nt - 1) / nt;
+    int chunk = (width + nt - 1) / nt;
     int begin = tid * chunk, end = begin + chunk;
     if (begin < 1)
         begin = 1;
-    if (end > height - 1)
-        end = height - 1;
-
-    for (int i = begin; i < end; ++i)
+    if (end > width - 1)
+        end = width - 1;
+    for (int i = 1; i < height - 1; ++i)
     {
-        for (int j = 1; j < width - 1; ++j)
+#pragma omp simd
+        for (int j = begin; j < end; ++j)
         {
             double pixel = 0.0;
             for (int l = -1; l <= 1; ++l)
@@ -41,7 +41,7 @@ void gaussianBlur(double** image, double** blurredImage, int height, int width)
                     pixel += image[i + k][j + l] * KERNEL[k + 1][l + 1];
                 }
             }
-            blurredImage[i][j] += pixel / 16.0;
+            blurredImage[i][j] = pixel / 16.0;
         }
     }
 }

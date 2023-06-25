@@ -9,16 +9,14 @@
 #SBATCH -w cu04
 
 export OMP_NUM_THREADS=1
-# ./gaussian_blur
-# ./gaussian_blur
-# ./gaussian_blur
-# ./gaussian_blur
-# ./gaussian_blur
+echo "-----ORIGINAL-----"
+./gaussian_blur
+
+# lscpu > lscpu.out
 
 export OMP_NUM_THREADS=12
-echo "TEST TIME * 5"
+echo "-----FINAL-----"
+# echo "TEST TIME * 5"
 ./gaussian_blur_try
-./gaussian_blur_try
-./gaussian_blur_try
-./gaussian_blur_try
-./gaussian_blur_try
+# ./gaussian_blur_try
+# ./gaussian_blur_try
