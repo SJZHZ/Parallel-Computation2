@@ -89,6 +89,29 @@ namespace attention {
         return c;
     }
 
+    Matrix* matmul_T(Matrix *a, Matrix *b)
+    {
+        if (a->col != b->col)
+            return nullptr;
+        int nn = a->col;
+        int mm = b->row;
+        Matrix *c = new Matrix(a->row, b->row);
+
+        for (int j = 0; j < mm; j ++)
+        {
+            for (int i = 0; i < a->row; ++i)
+            {
+                double cc = 0;
+                for (int k = 0; k < nn; ++k)
+                {
+                    cc += a->data[i][k] * b->data[j][k];
+                }
+                c->data[i][j] = cc;
+            }
+        }
+        return c;
+    }
+
     Matrix* scale(Matrix *a, double s) {
         Matrix *c = new Matrix(a->row, a->col);
 #pragma omp parallel for
@@ -126,11 +149,11 @@ namespace attention {
         if (n <= 0)
             n = 0;
         attention::Matrix *qq = getlines(q, n, begin);
-        // attention::Matrix *vt = transpose(v);
 
         Matrix *qk = matmul_T_cache(qq, k);
         Matrix *qk_s = scale(qk, 1.0 / sqrt(k->col));
         Matrix *qk_s_s = softmax(qk_s);
+        // attention::Matrix *vt = transpose(v);
         Matrix *qkv = matmul_T_cache(qk_s_s, vt);
         return qkv;
     }
